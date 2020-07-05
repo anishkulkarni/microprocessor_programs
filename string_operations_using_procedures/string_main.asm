@@ -4,69 +4,61 @@
                 lea dx,msg
                 mov ah,09h
                 int 21h
-        endm ;macro to display string
+        endm
 
         inp macro
                 mov ah,01h
                 int 21h
-        endm ;macro to input character
-
-        oup macro
-                mov ah,02h
-                int 21h
-        endm ;macro to output character
+        endm
 
 .data
-        menu db 13,10,'Menu',13,10,'1. Input',13,10,'2. Compare',13,10,'3. Concatenate',13,10,'4. Check Substring',13,10,'5. Count Characters, Words, Digits',13,10,'6. Exit',13,10,'Choice: ','$'
-        str_1 db 50 dup('$')
-        str_2 db 25 dup('$')
-        inv db 13,10,'Invalid input','$'
-        thanks db 13,10,'Thank You','$'
-        inp_head_1 db 13,10,'Enter first string: ','$'
-        inp_head_2 db 13,10,'Enter second string: ','$'      
-        choice db ?
-        public str_1,str_2,inp_head_1,inp_head_2
+        menu db 13,10,'Menu',13,10,'1. Input',13,10,'2. Compare',13,10,'3. Concatenate',13,10,'4. Substring',13,10,'5. Count',13,10,'6. Exit',13,10,'Choice: $'
+        choice db 0
+        invalid db 13,10,'Invalid choice please try again$'
 .code
-	mov ax,@data
-	mov ds,ax ; data segment initialization
-	
-        mov es,ax ; extra segment initialization
+        mov ax,@data
+        mov ds,ax
+        mov es,ax
 
-        extrn inp_str:far
-        extrn cmp_str:far
-        extrn cat_str:far
-        extrn sub_str:far
+        extrn inpString:far
+        extrn cmpString:far
+        extrn catString:far
+        extrn subString:far
+        extrn countString:far
 
-	menuloop:disp menu
-		 inp
+        menuLoop:disp menu
+                 inp
                  mov choice,al
-                 cmp choice,31h
-                 je inp_call
+                 cmp choice, 31h
+                 je inpCall
                  cmp choice,32h
-                 je cmp_call
+                 je cmpCall
                  cmp choice,33h
-                 je cat_call
+                 je catCall
                  cmp choice,34h
-                 je sub_call
+                 je subCall
+                 cmp choice,35h
+                 je countCall
                  cmp choice,36h
-                 je exit_call
-                 disp inv
-                 jmp menuloop ;loop to drive menu
+                 je exit
+                 disp invalid
+                 jmp menuLoop
 
-        inp_call:call inp_str
-                 jmp menuloop
+        inpCall:call inpString
+                jmp menuLoop
 
-        cmp_call:call cmp_str
-                 jmp menuloop
+        cmpCall:call cmpString
+                jmp menuLoop
 
-        cat_call:call cat_str
-                 jmp menuloop
+        catCall:call catString
+                jmp menuLoop
 
-        sub_call:call sub_str
-                 jmp menuloop
+        subCall:call subString
+                jmp menuLoop
+                
+        countCall:call countString
+        	  jmp menuLoop
 
-        exit_call:disp thanks
-                  mov ah,4ch
-                  int 21h
-
+        exit:mov ah,4Ch
+             int 21h
 end

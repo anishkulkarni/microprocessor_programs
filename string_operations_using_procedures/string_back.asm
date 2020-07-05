@@ -1,133 +1,206 @@
 .model small
 .stack 100h
+        INPSTR macro
+                mov ah,0Ah
+                int 21h
+        endm
 
-        disp macro msg
+        DISP macro msg
                 lea dx,msg
                 mov ah,09h
                 int 21h
-        endm ;macro to display string
+        endm
 
-        inp macro
-                mov ah,01h
-                int 21h
-        endm ;macro to input character
-
-        oup macro
+        OUP macro
                 mov ah,02h
                 int 21h
-        endm ;macro to output character
-
-        inp_msg macro
-                mov ah,0Ah
-                int 21h
-        endm ;macro to input string
+         endm
 
 .data
-
-	hi db 13,10,'Hello',13,10,'$'
-        e_msg db 13,10,'Given strings are equal','$'
-        ne_msg db 13,10,'Given strings are not equal: ','$'
-        s1_msg db 'String 1 greater','$'
-        s2_msg db 'String 2 greater','$'
-        cat_head db 13,10,'String after concatenation is: ','$'
-        sub_res db 13,10,'String 2 is a substring of String 1','$'
-        not_sub_res db 13,10,'String 2 is not a substring of String 1','$'
-        extrn str_1:byte
-        extrn str_2:byte
-        extrn inp_head_1:byte
-        extrn inp_head_2:byte      
-
+        str1 db 25 dup('$')
+        str2 db 25 dup('$')
+        str3 db 50 dup('$')
+        get1 db 13,10,'String 1: $'
+        get2 db 13,10,'String 2: $'
+        equal db 13,10,'Both strings equal$'
+        s1g db 13,10,'String 1 greate$r'
+        s2g db 13,10,'String 2 greater$'
+        temp dw ?
+        capAlpha db 0
+        smAlpha db 0
+        dig db 0
+        spaces db 0
+        newlc db 0
+        specChar db 0
+        capAlphaHead db 13,10,'Count of capital alphabets: $'
+        smAlphaHead db 13,10,'Count of small alphabets: $'
+        digHead db 13,10,'Count of digits: $'
+        spaceHead db 13,10,'Count of words: $'
+        newlHead db 13,10,'Count of lines: $'
+        specCharhead db 13,10,'Count of special characters: $'
 .code
-
-	mov ax,@data
+        mov ax,@data
         mov ds,ax
-
         mov es,ax
-	
-        public inp_str
-        inp_str proc far
-                disp inp_head_1
-                lea dx,str_1
-                inp_msg
-                disp inp_head_2
-                lea dx,str_2
-                inp_msg
-		ret
-	inp_str endp
 
-        public cmp_str
-        cmp_str proc far
-                lea si,str_1+1
-                lea di,str_2+1
-                mov cx,[si]
-		mov ch,00h
-                mov bx,[di]
-		mov bh,00h
-                cmp bl,cl
-                ja s2_greater
-                jb s1_greater
-                inc si
-                inc di
-		cld
-                repe cmpsb
-                jb s1_greater
-                ja s2_greater
-                disp e_msg
+        public inpString
+        inpString proc far
+                DISP get1
+                lea dx,str1
+                INPSTR
+                DISP get2
+                lea dx,str2
+                INPSTR
                 ret
-                s1_greater:disp ne_msg
-                           disp s1_msg
-                           ret
-                s2_greater:disp ne_msg
-                           disp s2_msg
-                           ret
-        cmp_str endp
+        inpString endp
 
-        public cat_str
-        cat_str proc far
-                lea di,str_1+1
-                lea si,str_2+1
+        public cmpString
+        cmpString proc far
+                lea si,str1+1
+                lea di,str2+1
+                mov cl,[si]
+                mov ch,00h
                 mov bl,[di]
                 mov bh,00h
-                mov cx,[si]
+                inc si
+                inc di
+                cmp cx,bx
+                ja great1
+                jb great2
+                rep cmpsb
+                ja great1
+                jb great2
+                DISP equal
+                ret
+                great1:DISP s1g
+                      ret
+                great2:DISP s2g
+                       ret
+        cmpString endp
+
+        public catString
+        catString proc far
+                lea si,str1+1
+                mov cl,[si]
                 mov ch,00h
-                add di,bx
+                lea di,str3+1
+                mov al,[si]
+                mov [di],al
                 inc si
                 inc di
                 rep movsb
-                disp cat_head
-                lea dx,str_1+2
-                mov ah,09h
-                int 21h
+                lea si,str2+1
+                mov bl,[si]
+                mov cl,[si]
+                mov ch,00h
+                inc si
+                rep movsb
+                lea di,str3+1
+                add [di],bl
+                DISP str3+2
                 ret
-        cat_str endp
+        catString endp
 
-        public sub_str
-        sub_str proc far
-                lea di,str_1+1
-                lea si,str_2+1
-                mov bl,[di]
+        public subString
+        subString proc far
+                mov dl,0000h
+                lea si,str1+1
+                lea di,str2+1
+                mov cl,[di]
+                mov bl,[si]
                 mov bh,00h
-                mov dl,[si]
-                mov dh,00h
-                cmp dl,bl
-                jg not_sub
-                sub bl,dl
-                mov cl,dl
                 mov ch,00h
                 inc si
                 inc di
+                cmp cl,bl
+                jg subret
+                sub bl,cl
                 inc bl
-                outloop:rep cmpsb
-                        cmp cx,0000h
-                        je is_sub
-                        inc di
-                        mov cl,dl
-                        dec bl
-                        jnz outloop
-                not_sub:disp not_sub_res
-                       ret
-                is_sub:disp sub_res
-                        ret
+                again:mov temp,si
+                      mov dh,cl
+                      repe cmpsb
+                      jne noinc
+                      inc dl
+                      noinc:lea di,str2+2
+                            mov si,temp
+                            inc si
+                            mov cl,dh
+                            dec bl
+                            jnz again
+                subret:add dl,30h
+                       oup
                 ret
-        sub_str endp 
+        subString endp
+        
+        public countString
+        countString proc far
+        	lea si,str1+1
+        	mov cl,[si]
+        	inc si
+        	countLoop:mov al,'0'
+        		  cmp [si],al
+        		  jbe sac
+        		  mov al,'9'
+        		  cmp [si],al
+        		  jg sac
+        		  inc dig
+        		  jmp iter
+        		  sac:mov al,'a'
+        		      cmp [si],al
+        		      jbe cac
+        		      mov al,'z'
+        		      cmp [si],al
+        		      jg cac
+        		      inc smAlpha
+        		      jmp iter
+        		  cac:mov al,'A'
+        		      cmp [si],al
+        		      jbe spc
+        		      mov al,'Z'
+        		      cmp [si],al
+        		      jg spc
+        		      inc capAlpha
+        		      jmp iter
+        		  spc:mov al,' '
+        		      cmp [si],al
+        		      jne newl
+        		      inc spaces
+        		      jmp iter
+        		  newl:mov al,13
+        		       cmp [si],al
+        		       jne spec
+        		       inc newlc
+        		       jmp iter
+        		  spec:inc specChar
+        		  iter:inc si
+        		       dec cl
+        		       jnz countLoop
+        	inc newlc
+        	inc spaces
+        	add capAlpha,30h
+        	add smAlpha,30h
+        	add dig,30h
+        	add newlc,30h
+        	add spaces,30h
+        	add specChar,30h
+        	DISP capAlphaHead
+        	mov dl,capAlpha
+        	OUP
+        	DISP smAlphaHead
+        	mov dl,smAlpha
+        	OUP
+        	DISP newlHead
+        	mov dl,newlc
+        	OUP
+        	DISP spaceHead
+        	mov dl,spaces
+        	OUP
+        	DISP specCharHead
+        	mov dl,specChar
+        	OUP
+        	DISP digHead
+        	mov dl,dig
+        	OUP
+        	ret
+        endp countString
 end
